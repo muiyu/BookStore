@@ -40,3 +40,54 @@ def add_funds():
     b = Buyer()
     code, message = b.add_funds(user_id, password, add_value)
     return jsonify({"message": message}), code
+
+
+@bp_buyer.route("/get_order_history", methods=["POST"])
+def get_order_history():
+    user_id = request.json.get("user_id")
+    b = Buyer()
+    code, message, _ = b.get_order_history(user_id)
+    return jsonify({"message": message}), code
+
+
+@bp_buyer.route("/cancel_order", methods=["POST"])
+def cancel_order():
+    user_id = request.json.get("user_id")
+    order_id = request.json.get("order_id")
+    b = Buyer()
+    code, message = b.cancel_order(user_id, order_id)
+    return jsonify({"message": message}), code
+
+
+@bp_buyer.route("/receive_order", methods=["POST"])
+def receive_order():
+    user_id = request.json.get("user_id")
+    order_id = request.json.get("order_id")
+    b = Buyer()
+    code, message = b.receive_order(user_id, order_id)
+    return jsonify({"message": message}), code
+
+
+@bp_buyer.route("/get_collection", methods=["POST"])
+def get_collection():
+    user_id = request.json.get("user_id")
+    b = Buyer()
+    code, message = b.get_collection(user_id)
+    return jsonify({"message": message}), code
+
+@bp_buyer.route("/collect_book", methods=["POST"])
+def collect_book():
+    user_id = request.json.get("user_id")
+    book_id = request.json.get("book_id")
+    b = Buyer()
+    code, message = b.collect_book(user_id = user_id, book_id = book_id)
+    return jsonify({"message": message}), code
+
+
+@bp_buyer.route("/uncollect_book", methods=["POST"])
+def uncollect_book():
+    user_id = request.json.get("user_id")
+    book_id = request.json.get("book_id")
+    b = Buyer()
+    code, message = b.uncollect_book(user_id = user_id, book_id = book_id)
+    return jsonify({"message": message}), code

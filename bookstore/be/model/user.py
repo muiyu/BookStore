@@ -1,17 +1,9 @@
 import jwt
 import time
 import logging
+import pymongo
 from be.model import error
 from be.model import db_conn
-import pymongo
-
-# encode a json string like:
-#   {
-#       "user_id": [user name],
-#       "terminal": [terminal code],
-#       "timestamp": [ts]} to a JWT
-#   }
-
 
 def jwt_encode(user_id: str, terminal: str) -> str:
     encoded = jwt.encode(
@@ -28,7 +20,7 @@ def jwt_decode(encoded_token, user_id: str) -> str:
 
 
 class User(db_conn.DBConn):
-    token_lifetime: int = 3600  # 3600 second
+    token_lifetime: int = 3600
 
     def __init__(self):
         db_conn.DBConn.__init__(self)
@@ -50,6 +42,7 @@ class User(db_conn.DBConn):
             logging.error(str(e))
 
         return False
+
 
     def register(self, user_id: str, password: str):
         try:
@@ -75,7 +68,7 @@ class User(db_conn.DBConn):
     def check_token(self, user_id: str, token: str) -> (int, str):
         user = self.conn['user'].find_one({'user_id': user_id})
         if user is None:
-            return error.error_authorization_fail()
+            return error.error_exist_user_id(user_id)
 
         db_token = user.get('token', '')
         is_token_valid = self.__check_token(user_id, db_token, token)
@@ -83,6 +76,7 @@ class User(db_conn.DBConn):
             return error.error_authorization_fail()
 
         return 200, "ok"
+
 
     def check_password(self, user_id: str, password: str) -> (int, str):
         try:
@@ -97,6 +91,7 @@ class User(db_conn.DBConn):
             return 528, str(e)
 
         return 200, "ok"
+
 
     def login(self, user_id: str, password: str, terminal: str) -> (int, str, str):
         try:
@@ -154,6 +149,7 @@ class User(db_conn.DBConn):
             return 530, str(e)
         return 200, "ok"
 
+
     def change_password(self, user_id: str, old_password: str, new_password: str) -> (int, str):
         try:
             code, message = self.check_password(user_id, old_password)
@@ -175,6 +171,7 @@ class User(db_conn.DBConn):
         except Exception as e:
             return 530, str(e)
         return 200, "ok"
+
 
     def search_book(self, title='', content='', tag='', store_id=''):
         try:
@@ -207,13 +204,16 @@ class User(db_conn.DBConn):
 
     def collect_book(self, user_id, book_id):
         try:
+            # Check if the user exists in the collection
             existing_user = self.conn['user'].find_one({"_id": user_id})
             if not existing_user:
                 return error.error_non_exist_user_id(user_id)
 
+            # Check if the book and store combination is already in the user's collection
             if (book_id) in existing_user.get("collection", []):
                 return error.error_exist_collection(book_id)
 
+            # Update the user's collection with the new book and store
             self.conn['user'].update_one(
                 {"_id": user_id},
                 {"$addToSet": {"collection": (book_id)}}
@@ -221,13 +221,17 @@ class User(db_conn.DBConn):
             return 200, "ok"
         except pymongo.errors.PyMongoError as e:
             return 528, str(e)
+        except Exception as e:
+            return 530, "{}".format(str(e))
 
     def uncollect_book(self, user_id, book_id, store_id):
         try:
+            # Check if the user exists in the collection
             existing_user = self.conn['user'].find_one({"_id": user_id})
             if not existing_user:
                 return error.error_non_exist_user_id(user_id)
 
+            # Remove the specified book and store from the user's collection
             self.conn['user'].update_one(
                 {"_id": user_id},
                 {"$pull": {"collection": (book_id, store_id)}}
@@ -235,14 +239,20 @@ class User(db_conn.DBConn):
             return 200, "ok"
         except pymongo.errors.PyMongoError as e:
             return 528, str(e)
+        except Exception as e:
+            return 530, "{}".format(str(e))
 
     def get_collection(self, user_id):
         try:
+            # Check if the user exists in the collection
             existing_user = self.conn['user'].find_one({"_id": user_id})
             if not existing_user:
                 return error.error_non_exist_user_id(user_id)
 
+            # Return the user's collection
             collection = existing_user.get("collection", [])
             return 200, collection
         except pymongo.errors.PyMongoError as e:
             return 528, str(e)
+        except Exception as e:
+            return 530, "{}".format(str(e))
