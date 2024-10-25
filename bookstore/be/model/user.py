@@ -68,7 +68,7 @@ class User(db_conn.DBConn):
     def check_token(self, user_id: str, token: str) -> (int, str):
         user = self.conn['user'].find_one({'user_id': user_id})
         if user is None:
-            return error.error_exist_user_id(user_id)
+            return error.error_authorization_fail()
 
         db_token = user.get('token', '')
         is_token_valid = self.__check_token(user_id, db_token, token)

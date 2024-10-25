@@ -1,7 +1,8 @@
-import sqlite3 as sqlite
+import pymongo
 import uuid
 import json
 import logging
+import threading
 from be.model import db_conn
 from be.model import error
 
@@ -9,6 +10,7 @@ from be.model import error
 class Buyer(db_conn.DBConn):
     def __init__(self):
         db_conn.DBConn.__init__(self)
+        self.timer = None
 
 
     def new_order(
@@ -57,8 +59,8 @@ class Buyer(db_conn.DBConn):
             self.conn["new_order"].insert_one(order)
             order_id = uid
             ### 新功能：取消订单 ###
-            timer = threading.Timer(60.0, self.cancel_order, args=[user_id, order_id])
-            timer.start()
+            self.timer = threading.Timer(300.0, self.cancel_order, args=[user_id, order_id])
+            self.timer.start()
             ### 新功能：历史订单 ###
             order["status"] = "pending"
             self.conn["order_history"].insert_one(order)
@@ -91,6 +93,11 @@ class Buyer(db_conn.DBConn):
             ### 检查密码是否正确 ###
             if password != buyer["password"]:
                 return error.error_authorization_fail()
+            ### 检查订单是否超时 ###
+            if conn["order_history"].find_one({"order_id": order_id})["status"] != "pending":
+                return 525, "order timeout"
+            if self.timer is not None:
+                self.timer.cancel()
             ### 检查余额是否足够支付订单 ###
             total_price = sum(detail["price"] for detail in conn["new_order_detail"].find({"order_id": order_id}))
             if buyer["balance"] < total_price:
@@ -190,6 +197,7 @@ class Buyer(db_conn.DBConn):
         return 200, "ok", order_list
 
 
+    ### 新功能：取消订单 ###
     def cancel_order(self, user_id: str, order_id: str) -> (int, str):
         try:
             order = self.conn["new_order"].find_one({"order_id": order_id})
