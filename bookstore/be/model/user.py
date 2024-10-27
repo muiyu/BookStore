@@ -173,10 +173,12 @@ class User(db_conn.DBConn):
         return 200, "ok"
 
 
+    ### 新功能：图书搜索 ###
     def search_book(self, title='', content='', tag='', store_id=''):
         try:
             query = {}
 
+            ### 根据title、content、tag、store_id查询图书 ###
             if title:
                 query['title'] = {"$regex": title}
             if content:
@@ -192,6 +194,7 @@ class User(db_conn.DBConn):
                 book_ids = [item["book_id"] for item in store_result.get("book_id", [])]
                 query['id'] = {"$in": book_ids}
 
+            ### 获得符合条件的书籍信息 ###
             results = list(self.conn["books"].find(query))
             if not results:
                 return 529, "No matching books found."
@@ -202,18 +205,20 @@ class User(db_conn.DBConn):
         except Exception as e:
             return 530, "{}".format(str(e))
 
+
+    ### 新功能：收藏图书 ###
     def collect_book(self, user_id, book_id):
         try:
-            # Check if the user exists in the collection
+            ### 检查用户是否存在于数据库中 ###
             existing_user = self.conn['user'].find_one({"_id": user_id})
             if not existing_user:
                 return error.error_non_exist_user_id(user_id)
 
-            # Check if the book and store combination is already in the user's collection
+            ### 检查该书籍是否已在用户的收藏中 ###
             if (book_id) in existing_user.get("collection", []):
                 return error.error_exist_collection(book_id)
 
-            # Update the user's collection with the new book and store
+            ### 将书籍添加到用户的收藏中 ###
             self.conn['user'].update_one(
                 {"_id": user_id},
                 {"$addToSet": {"collection": (book_id)}}
@@ -224,14 +229,16 @@ class User(db_conn.DBConn):
         except Exception as e:
             return 530, "{}".format(str(e))
 
+
+    ### 新功能：取消收藏图书 ###
     def uncollect_book(self, user_id, book_id, store_id):
         try:
-            # Check if the user exists in the collection
+            ### 检查用户是否在数据库中 ###
             existing_user = self.conn['user'].find_one({"_id": user_id})
             if not existing_user:
                 return error.error_non_exist_user_id(user_id)
 
-            # Remove the specified book and store from the user's collection
+            ### 从收藏中移除书籍 ###
             self.conn['user'].update_one(
                 {"_id": user_id},
                 {"$pull": {"collection": (book_id, store_id)}}
@@ -242,16 +249,75 @@ class User(db_conn.DBConn):
         except Exception as e:
             return 530, "{}".format(str(e))
 
+
+    ### 新功能：获取用户收藏 ###
     def get_collection(self, user_id):
         try:
-            # Check if the user exists in the collection
             existing_user = self.conn['user'].find_one({"_id": user_id})
             if not existing_user:
                 return error.error_non_exist_user_id(user_id)
 
-            # Return the user's collection
+            ### 获取用户的收藏 ###
             collection = existing_user.get("collection", [])
             return 200, collection
+        except pymongo.errors.PyMongoError as e:
+            return 528, str(e)
+        except Exception as e:
+            return 530, "{}".format(str(e))
+        
+    
+    ### 新功能：收藏店铺 ###
+    def collect_store(self, user_id, store_id):
+        try:
+            existing_user = self.conn['user'].find_one({"_id": user_id})
+            if not existing_user:
+                return error.error_non_exist_user_id(user_id)
+
+            ### 检查店铺是否已在用户的收藏中 ###
+            if store_id in existing_user.get("store_collection", []):
+                return error.error_exist_collection(store_id)
+
+            ### 将店铺添加到收藏中 ###
+            self.conn['user'].update_one(
+                {"_id": user_id},
+                {"$addToSet": {"store_collection": store_id}}
+            )
+            return 200, "ok"
+        except pymongo.errors.PyMongoError as e:
+            return 528, str(e)
+        except Exception as e:
+            return 530, "{}".format(str(e))
+
+
+    ### 新功能：取消收藏店铺 ###
+    def uncollect_store(self, user_id, store_id):
+        try:
+            existing_user = self.conn['user'].find_one({"_id": user_id})
+            if not existing_user:
+                return error.error_non_exist_user_id(user_id)
+
+            ### 从收藏中移除店铺 ###
+            self.conn['user'].update_one(
+                {"_id": user_id},
+                {"$pull": {"store_collection": store_id}}
+            )
+            return 200, "ok"
+        except pymongo.errors.PyMongoError as e:
+            return 528, str(e)
+        except Exception as e:
+            return 530, "{}".format(str(e))
+
+
+    ### 新功能：获取用户收藏的店铺 ###
+    def get_store_collection(self, user_id):
+        try:
+            existing_user = self.conn['user'].find_one({"_id": user_id})
+            if not existing_user:
+                return error.error_non_exist_user_id(user_id)
+
+            ### 获取用户的店铺收藏列表 ###
+            store_collection = existing_user.get("store_collection", [])
+            return 200, store_collection
         except pymongo.errors.PyMongoError as e:
             return 528, str(e)
         except Exception as e:
