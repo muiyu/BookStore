@@ -12,6 +12,7 @@ bookstore
         |-- token                       用于保持会话，该值由 terminal 和 user_id 计算而来
         |-- terminal                    用于保持会话，该值同当前时间戳有关
         |-- collection: [book_id]
+        |-- store_collection: [store_id]
     |-- store
         |-- store_id
         |-- book_id
