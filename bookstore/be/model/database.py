@@ -12,7 +12,7 @@ class MongoDB_client:
         # self.socket = pymongo.MongoClient('mongodb://localhost:27017')
         self.socket = pymongo.MongoClient(uri, server_api=pymongo.server_api.ServerApi('1'))
         self.check_and_delete_database('bookstore')
-        self.database = self.socket.bookstore
+        self.database = self.socket['bookstore']
 
     def check_and_delete_database(self, database_name):
         if database_name in self.socket.list_database_names():
