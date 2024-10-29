@@ -22,60 +22,48 @@ class TestCancelOrder:
         self.seller_id = "test_payment_seller_id_{}".format(str(uuid.uuid1()))
         self.store_id = "test_payment_store_id_{}".format(str(uuid.uuid1()))
         self.buyer_id = "test_payment_buyer_id_{}".format(str(uuid.uuid1()))
-        self.password = self.seller_id
-
-        b = register_new_buyer(self.buyer_id, self.password)
-        self.buyer = b
-        gen_book = GenBook(self.seller_id, self.store_id)
+        self.password = self.buyer_id
+        self.buyer = register_new_buyer(self.buyer_id, self.password)
         self.buy_book_info_list = []
-        self.order_id = []
-        for i in range(2):
-            ok, buy_book_id_list = gen_book.gen(
-                non_exist_book_id=False, low_stock_level=False, max_book_count=2
-            )
-            self.buy_book_info_list.extend(gen_book.buy_book_info_list)
-            assert ok
+        self.order_id = None
 
-            code, order_id = b.new_order(self.store_id, buy_book_id_list)
-            self.order_id.append(order_id)
-            assert code == 200
-        self.total_price = 0
-        for item in self.buy_book_info_list:
-            book: Book = item[0]
-            num = item[1]
-            if book.price is None:
-                continue
-            else:
-                self.total_price = self.total_price + book.price * num
-        self.buyer.add_funds(self.total_price)
-        for i in range(1):
-            self.buyer.payment(self.order_id[i])
+        g = GenBook(self.seller_id, self.store_id)
+        code, buy_book_id_list = g.gen(non_exist_book_id=False, low_stock_level=False, max_book_count=2)
+        assert code == True
+        self.buy_book_info_list.extend(g.buy_book_info_list)
+
+        code, self.order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
+        assert code == 200
+        assert self.order_id is not None
+        
         yield
 
     def test_ok(self):
-        code = self.buyer.cancel_order(self.order_id[1])
+        code = self.buyer.cancel_order(self.order_id)
         assert code == 200
 
     def test_wrong_user_id(self):
         self.buyer.user_id = self.buyer.user_id + "_x"
-        code = self.buyer.cancel_order(self.order_id[1])
+        code = self.buyer.cancel_order(self.order_id)
         assert code != 200
 
     def test_non_exist_order_id(self):
-        code = self.buyer.cancel_order(self.order_id[1] + "_x")
+        code = self.buyer.cancel_order(self.order_id + "_x")
         assert code != 200
 
     def test_repeat_cancel(self):
-        code = self.buyer.cancel_order(self.order_id[1])
+        code = self.buyer.cancel_order(self.order_id)
         assert code == 200
-        code = self.buyer.cancel_order(self.order_id[1])
+        code = self.buyer.cancel_order(self.order_id)
         assert code != 200
 
     def test_cancel_paid_order(self):
-        code = self.buyer.cancel_order(self.order_id[0])
+        self.buyer.add_funds(Default_User_Funds)
+        self.buyer.payment(self.order_id)
+        code = self.buyer.cancel_order(self.order_id)
         assert code != 200
 
     def test_cancel_long_time_order(self):
-        time.sleep(31)
-        code = self.buyer.cancel_order(self.order_id[1])
+        time.sleep(11)
+        code = self.buyer.cancel_order(self.order_id)
         assert code != 200
