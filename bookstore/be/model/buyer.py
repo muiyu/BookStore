@@ -59,7 +59,7 @@ class Buyer(db_conn.DBConn):
             self.conn["new_order"].insert_one(order)
             order_id = uid
             ### 新功能：取消订单 ###
-            self.timer = threading.Timer(300.0, self.cancel_order, args=[user_id, order_id])
+            self.timer = threading.Timer(10.0, self.cancel_order, args=[user_id, order_id])
             self.timer.start()
             ### 新功能：历史订单 ###
             order["status"] = "pending"
@@ -95,7 +95,7 @@ class Buyer(db_conn.DBConn):
                 return error.error_authorization_fail()
             ### 检查订单是否超时 ###
             if conn["order_history"].find_one({"order_id": order_id})["status"] != "pending":
-                return 525, "order timeout"
+                error.error_invalid_order_status(order_id)
             if self.timer is not None:
                 self.timer.cancel()
             ### 检查余额是否足够支付订单 ###
@@ -151,6 +151,10 @@ class Buyer(db_conn.DBConn):
         try:
             conn = self.conn
 
+            user = conn["user"].find_one({"user_id": user_id})
+            if not user:
+                return error.error_non_exist_user_id(user_id) + ([],)
+            
             ### 查询用户的订单 ###
             orders = conn["order_history"].aggregate([
                 {"$match": {"user_id": user_id}},
@@ -162,9 +166,9 @@ class Buyer(db_conn.DBConn):
                 }}
             ])
 
-            ### 如果用户没有订单，返回错误信息和空订单列表 ###
+            ### 如果用户没有订单，返回空订单列表 ###
             if not orders:
-                return error.error_non_exist_user_id(user_id) + ([],)
+                return 200, "Blank order list!" + ([],)
 
             ### 构建订单列表 ###
             order_list = []
@@ -207,6 +211,9 @@ class Buyer(db_conn.DBConn):
             buyer_id = order["user_id"]
             if buyer_id != user_id:
                 return error.error_authorization_fail()
+
+            if self.conn["order_history"].find_one({"order_id": order_id})["status"] != "pending":
+                return error.error_invalid_order_status(order_id)
 
             result = self.conn["new_order"].delete_one({"order_id": order_id})
             if result.deleted_count == 0:
