@@ -56,6 +56,23 @@ bookstore
     |-- user_store
         |-- user_id
         |-- store_id
+    |-- books
+        |-- tags
+        |-- pictures
+        |-- id
+        |-- title
+        |-- author
+        |-- publisher
+        |-- original_title
+        |-- translator
+        |-- pub_year
+        |-- pages
+        |-- price
+        |-- binding
+        |-- isbn
+        |-- author_intro
+        |-- book_intro
+        |-- content
 ```
 
 ## Dev Log
@@ -70,6 +87,7 @@ bookstore
 |10/27|新特性功能测试通过          |对新功能添加了测试代码，在小数据集测试通过             |
 |10/28|拓展功能测试                |对拓展功能添加了测试代码，部分测试通过             |
 |10/29|BUG修复                    |修复代码以通过测试；增加数据库索引；增加导入数据至 MongoDB 的脚本            |
+|10/31|项目完成                   |所有测试通过，调整项目结构，发布最终版本，撰写实验报告            |
 
 ## Basic Feature
 - 用户权限接口，如注册、登录、登出、注销
@@ -99,6 +117,6 @@ bookstore
 ## 待办
 - [x] 提高新功能测试代码覆盖率
 - [x] 导入书店数据至 MongoDB 数据库
-- [ ] 使用导入的完整书籍数据集进行测试
+- [x] 使用导入的完整书籍数据集进行测试
 - [x] 提高拓展功能测试代码覆盖率
 - [x] 增加索引
