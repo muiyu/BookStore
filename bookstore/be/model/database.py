@@ -13,9 +13,6 @@ class MongoDB_client:
         self.socket = pymongo.MongoClient(uri, server_api=pymongo.server_api.ServerApi('1'))
         self.check_and_delete_database('bookstore')
         self.database = self.socket['bookstore']
-        self.database["user"].create_index([("user_id", pymongo.ASCENDING)])
-        self.database["user_store"].create_index([("user_id", pymongo.ASCENDING), ("store_id", pymongo.ASCENDING)])
-        self.database["store"].create_index([("book_id", pymongo.ASCENDING), ("store_id", pymongo.ASCENDING)])
 
     def check_and_delete_database(self, database_name):
         if database_name in self.socket.list_database_names():
