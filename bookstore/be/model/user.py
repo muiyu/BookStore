@@ -178,7 +178,6 @@ class User(db_conn.DBConn):
         try:
             query = {}
 
-            ### 根据title、content、tag、store_id查询图书 ###
             if title:
                 query['title'] = {"$regex": title}
             if content:
@@ -186,21 +185,24 @@ class User(db_conn.DBConn):
             if tag:
                 query['tags'] = {"$regex": tag}
 
+            # 检查 store_id 是否为空
             if store_id:
+                # 查询 store 集合，获取指定 store_id 下的所有 book_id
                 store_query = {"store_id": store_id}
-                store_result = self.conn["store"].find_one(store_query, {"book_id": 1})
-                if not store_result:
+                store_result = list(self.conn["store"].find(store_query))
+                if len(store_result) == 0:
                     return error.error_non_exist_store_id(store_id)
-                book_ids = [item["book_id"] for item in store_result.get("book_id", [])]
+                book_ids = [item["book_id"] for item in store_result]
+                # 添加 book_id 到查询条件
                 query['id'] = {"$in": book_ids}
 
-            ### 获得符合条件的书籍信息 ###
+            # 执行查询
             results = list(self.conn["books"].find(query))
-            if not results:
-                return 529, "No matching books found."
-            else:
-                return 200, "ok"
         except pymongo.errors.PyMongoError as e:
             return 528, str(e)
-        except Exception as e:
-            return 530, "{}".format(str(e))        
+        except BaseException as e:
+            return 530, "{}".format(str(e))
+        if not results:
+            return 529, "No matching books found."
+        else:
+            return 200, "ok"
