@@ -31,7 +31,7 @@ class BookDB:
     __db = None
 
     def __init__(self, not_used_param: bool = False):
-        ### 注释行专为远程数据库使用 ###
+        ### 注释行专为本地数据库使用 ###
         self.socket = pymongo.MongoClient(os.getenv('MONGODB_API'), server_api=pymongo.server_api.ServerApi('1'))
         # self.socket = pymongo.MongoClient('mongodb://localhost:27017')
         self.db = self.socket['bookstore']
