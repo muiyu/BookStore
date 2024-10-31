@@ -173,6 +173,7 @@ class User(db_conn.DBConn):
         return 200, "ok"
 
 
+    ### 新功能：图书搜索 ###
     def search_book(self, title='', content='', tag='', store_id=''):
         try:
             query = {}
@@ -184,75 +185,24 @@ class User(db_conn.DBConn):
             if tag:
                 query['tags'] = {"$regex": tag}
 
+            # 检查 store_id 是否为空
             if store_id:
+                # 查询 store 集合，获取指定 store_id 下的所有 book_id
                 store_query = {"store_id": store_id}
-                store_result = self.conn["store"].find_one(store_query, {"book_id": 1})
-                if not store_result:
+                store_result = list(self.conn["store"].find(store_query))
+                if len(store_result) == 0:
                     return error.error_non_exist_store_id(store_id)
-                book_ids = [item["book_id"] for item in store_result.get("book_id", [])]
+                book_ids = [item["book_id"] for item in store_result]
+                # 添加 book_id 到查询条件
                 query['id'] = {"$in": book_ids}
 
+            # 执行查询
             results = list(self.conn["books"].find(query))
-            if not results:
-                return 529, "No matching books found."
-            else:
-                return 200, "ok"
         except pymongo.errors.PyMongoError as e:
             return 528, str(e)
-        except Exception as e:
+        except BaseException as e:
             return 530, "{}".format(str(e))
-
-    def collect_book(self, user_id, book_id):
-        try:
-            # Check if the user exists in the collection
-            existing_user = self.conn['user'].find_one({"_id": user_id})
-            if not existing_user:
-                return error.error_non_exist_user_id(user_id)
-
-            # Check if the book and store combination is already in the user's collection
-            if (book_id) in existing_user.get("collection", []):
-                return error.error_exist_collection(book_id)
-
-            # Update the user's collection with the new book and store
-            self.conn['user'].update_one(
-                {"_id": user_id},
-                {"$addToSet": {"collection": (book_id)}}
-            )
+        if not results:
+            return 529, "No matching books found."
+        else:
             return 200, "ok"
-        except pymongo.errors.PyMongoError as e:
-            return 528, str(e)
-        except Exception as e:
-            return 530, "{}".format(str(e))
-
-    def uncollect_book(self, user_id, book_id, store_id):
-        try:
-            # Check if the user exists in the collection
-            existing_user = self.conn['user'].find_one({"_id": user_id})
-            if not existing_user:
-                return error.error_non_exist_user_id(user_id)
-
-            # Remove the specified book and store from the user's collection
-            self.conn['user'].update_one(
-                {"_id": user_id},
-                {"$pull": {"collection": (book_id, store_id)}}
-            )
-            return 200, "ok"
-        except pymongo.errors.PyMongoError as e:
-            return 528, str(e)
-        except Exception as e:
-            return 530, "{}".format(str(e))
-
-    def get_collection(self, user_id):
-        try:
-            # Check if the user exists in the collection
-            existing_user = self.conn['user'].find_one({"_id": user_id})
-            if not existing_user:
-                return error.error_non_exist_user_id(user_id)
-
-            # Return the user's collection
-            collection = existing_user.get("collection", [])
-            return 200, collection
-        except pymongo.errors.PyMongoError as e:
-            return 528, str(e)
-        except Exception as e:
-            return 530, "{}".format(str(e))

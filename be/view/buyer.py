@@ -72,7 +72,7 @@ def receive_order():
 def get_collection():
     user_id = request.json.get("user_id")
     b = Buyer()
-    code, message = b.get_collection(user_id)
+    code, message = b.get_collection(user_id = user_id)
     return jsonify({"message": message}), code
 
 @bp_buyer.route("/collect_book", methods=["POST"])
@@ -90,4 +90,28 @@ def uncollect_book():
     book_id = request.json.get("book_id")
     b = Buyer()
     code, message = b.uncollect_book(user_id = user_id, book_id = book_id)
+    return jsonify({"message": message}), code
+
+
+@bp_buyer.route("/get_store_collection", methods=["POST"])
+def get_store_collection():
+    user_id = request.json.get("user_id")
+    b = Buyer()
+    code, message = b.get_store_collection(user_id = user_id)
+    return jsonify({"message": message}), code
+
+@bp_buyer.route("/collect_store", methods=["POST"])
+def collect_store():
+    user_id = request.json.get("user_id")
+    store_id = request.json.get("store_id")
+    b = Buyer()
+    code, message = b.collect_store(user_id = user_id, store_id = store_id)
+    return jsonify({"message": message}), code
+
+@bp_buyer.route("/uncollect_store", methods=["POST"])
+def uncollect_store():
+    user_id = request.json.get("user_id")
+    store_id = request.json.get("store_id")
+    b = Buyer()
+    code, message = b.uncollect_store(user_id = user_id, store_id = store_id)
     return jsonify({"message": message}), code

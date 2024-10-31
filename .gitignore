@@ -1,6 +1,5 @@
 __pycache__/
-/.pytest_cache/
-/bookstore/fe/data/
-/bookstore/app.log
-/htmlcov/
+.pytest_cache/
+htmlcov/
+app.log
 .coverage

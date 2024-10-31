@@ -8,11 +8,11 @@ class MongoDB_client:
     __database = None
 
     def __init__(self):
-        ### If you want to use local mongodb, use the following line ###
+        ### 注释行为本地数据库使用 ###
         # self.socket = pymongo.MongoClient('mongodb://localhost:27017')
         self.socket = pymongo.MongoClient(uri, server_api=pymongo.server_api.ServerApi('1'))
         self.check_and_delete_database('bookstore')
-        self.database = self.socket.bookstore
+        self.database = self.socket['bookstore']
 
     def check_and_delete_database(self, database_name):
         if database_name in self.socket.list_database_names():
